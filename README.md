@@ -16,6 +16,7 @@ For the Mitou Junior program, mentors need to interview project proposers online
 - `generate_test_data.py`: Helper script to generate test data for demonstration
 - `create_mentor_availability.py`: Script to convert Google Form CSV data to mentor availability format
 - `create_proposer_availability.py`: Script to convert Google Form CSV data to proposer availability format
+- `create_proposer_availability_transposed.py`: Script to convert transposed Google Form CSV data to proposer availability format
 
 ## Requirements
 
@@ -50,6 +51,8 @@ The input CSV file should contain the following columns:
 
 If you have proposer availability data from a Google Form, you can convert it to the required format:
 
+#### For standard CSV format (columns as fields):
+
 ```bash
 python create_proposer_availability.py --input-file path/to/google_form_export.csv --output-file test_data/proposer_availability.csv
 ```
@@ -59,6 +62,18 @@ The input CSV file should contain the following columns:
 - Various proposer information columns
 - 二次選考（オンライン面接）が可能な日時 (Interview preferred times) - comma-separated list of time slots
 - ID - Proposer ID (e.g., P001)
+
+#### For transposed CSV format (rows as fields):
+
+```bash
+python create_proposer_availability_transposed.py --input-file path/to/google_form_export.csv --output-file test_data/proposer_availability.csv
+```
+
+The input CSV file should have:
+- First column containing field names
+- First row containing timestamps
+- A row with field name "二次選考（オンライン面接）が可能な日時" containing availability data
+- A row with field name "ID" containing proposer IDs
 
 ### 3. Generate Test Data (Optional)
 
