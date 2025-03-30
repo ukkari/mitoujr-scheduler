@@ -14,6 +14,7 @@ For the Mitou Junior program, mentors need to interview project proposers online
 
 - `interview_scheduler.py`: Main script for scheduling interviews
 - `generate_test_data.py`: Helper script to generate test data for demonstration
+- `create_mentor_availability.py`: Script to convert Google Form CSV data to mentor availability format
 
 ## Requirements
 
@@ -29,7 +30,22 @@ pip install pandas numpy
 
 ## Usage
 
-### 1. Generate Test Data (Optional)
+### 1. Create Mentor Availability File from Google Form
+
+If you have mentor availability data from a Google Form, you can convert it to the required format:
+
+```bash
+python create_mentor_availability.py --input-file path/to/google_form_export.csv --output-file test_data/mentor_availability.csv
+```
+
+The input CSV file should contain the following columns:
+- タイムスタンプ (Timestamp)
+- メールアドレス (Email address)
+- 名前 (Name)
+- インタビュー希望時間 (Interview preferred times) - comma-separated list of time slots
+- Mentor ID (e.g., M01)
+
+### 2. Generate Test Data (Optional)
 
 If you don't have real data yet, you can generate test data:
 
