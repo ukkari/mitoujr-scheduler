@@ -13,13 +13,20 @@ from interview_scheduler import InterviewScheduler
 
 def create_example_data():
     """Create a small example dataset for demonstration."""
-    # Define time slots
     time_slots = [
-        "4/23 夜 (19:00 - 21:00)",
-        "4/24 夜 (19:00 - 21:00)",
-        "4/25 夜 (19:00 - 21:00)",
-        "4/26 午前 (9:00 - 12:00)",
-        "4/26 午後 (13:00 - 17:00)"
+        "2024/04/23 07:00 PM",
+        "2024/04/23 08:00 PM",
+        "2024/04/24 07:00 PM",
+        "2024/04/24 08:00 PM",
+        "2024/04/25 07:00 PM",
+        "2024/04/25 08:00 PM",
+        "2024/04/26 09:00 AM",
+        "2024/04/26 10:00 AM",
+        "2024/04/26 11:00 AM",
+        "2024/04/26 01:00 PM",
+        "2024/04/26 02:00 PM",
+        "2024/04/26 03:00 PM",
+        "2024/04/26 04:00 PM"
     ]
     
     # Define project IDs and mentor names
@@ -28,19 +35,19 @@ def create_example_data():
     
     # Create example availability for proposers
     proposer_data = {
-        "P001": [True, False, True, False, True],
-        "P002": [False, True, True, True, False],
-        "P003": [True, True, False, False, True],
-        "P004": [False, False, True, True, True],
-        "P005": [True, False, False, True, True]
+        "P001": [True, True, False, False, True, True, False, False, False, True, True, True, False],
+        "P002": [False, False, True, True, True, True, True, True, False, False, False, False, False],
+        "P003": [True, True, True, True, False, False, False, False, False, True, True, True, True],
+        "P004": [False, False, False, False, True, True, True, True, True, True, True, False, False],
+        "P005": [True, True, False, False, False, False, True, True, True, True, True, True, True]
     }
     proposer_availability = pd.DataFrame(proposer_data, index=time_slots)
     
     # Create example availability for mentors
     mentor_data = {
-        "MentorA": [True, True, False, True, False],
-        "MentorB": [False, True, True, False, True],
-        "MentorC": [True, False, True, True, True]
+        "MentorA": [True, True, True, True, False, False, True, True, False, False, False, False, False],
+        "MentorB": [False, False, True, True, True, True, False, False, False, True, True, True, True],
+        "MentorC": [True, True, False, False, True, True, True, True, True, True, True, False, False]
     }
     mentor_availability = pd.DataFrame(mentor_data, index=time_slots)
     

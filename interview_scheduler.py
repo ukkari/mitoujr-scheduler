@@ -6,6 +6,8 @@ import numpy as np
 from collections import defaultdict
 import argparse
 import os
+import re
+from datetime import datetime, timedelta
 
 class InterviewScheduler:
     def __init__(self, proposer_file, mentor_file, preference_file):
@@ -86,18 +88,31 @@ class InterviewScheduler:
         current_group = [sorted_slots[0]]
         
         for i in range(1, len(sorted_slots)):
-            # Check if slots are consecutive (this is simplified - would need proper date/time parsing)
-            # For now, just check if they're adjacent in the sorted list
-            current_slot_idx = self.time_slots.index(current_group[-1])
-            next_slot_idx = self.time_slots.index(sorted_slots[i])
+            current_slot = current_group[-1]
+            next_slot = sorted_slots[i]
             
-            if next_slot_idx == current_slot_idx + 1:
-                # Consecutive slot
-                current_group.append(sorted_slots[i])
-            else:
-                # Start a new group
-                consecutive_groups.append(current_group)
-                current_group = [sorted_slots[i]]
+            try:
+                current_datetime = datetime.strptime(current_slot, "%Y/%m/%d %I:%M %p")
+                next_datetime = datetime.strptime(next_slot, "%Y/%m/%d %I:%M %p")
+                
+                if next_datetime - current_datetime == timedelta(hours=1):
+                    # Consecutive slot
+                    current_group.append(next_slot)
+                else:
+                    # Start a new group
+                    consecutive_groups.append(current_group)
+                    current_group = [next_slot]
+            except ValueError:
+                current_slot_idx = self.time_slots.index(current_group[-1])
+                next_slot_idx = self.time_slots.index(sorted_slots[i])
+                
+                if next_slot_idx == current_slot_idx + 1:
+                    # Consecutive slot
+                    current_group.append(sorted_slots[i])
+                else:
+                    # Start a new group
+                    consecutive_groups.append(current_group)
+                    current_group = [sorted_slots[i]]
                 
         consecutive_groups.append(current_group)
         return consecutive_groups
@@ -233,7 +248,7 @@ class InterviewScheduler:
     def output_schedule(self):
         """Generate a formatted schedule output."""
         # Sort by time slot
-        sorted_schedule = sorted(self.schedule.items(), key=lambda x: self.time_slots.index(x[0][1]))
+        sorted_schedule = sorted(self.schedule.items(), key=lambda x: x[0][1])
         
         # Create a DataFrame for the schedule
         schedule_data = []
@@ -301,6 +316,53 @@ class InterviewScheduler:
                     })
                     
         return unscheduled
+        
+    def _parse_time_slot(self, time_slot):
+        """
+        Parse a time slot string and return the date, start time, and end time.
+        
+        Example: "4/23 夜 (19:00 - 21:00)" -> (4/23, 19:00, 21:00)
+        """
+        match = re.match(r'(\d+/\d+)\s+[^\(]+\((\d+:\d+)\s*-\s*(\d+:\d+)\)', time_slot)
+        if match:
+            date_str, start_time, end_time = match.groups()
+            return date_str, start_time, end_time
+        return None, None, None
+    
+    def _split_into_hourly_slots(self, time_slot):
+        """
+        Split a time slot into hourly slots.
+        
+        Example: "4/23 夜 (19:00 - 21:00)" -> ["2024/04/23 19:00 PM", "2024/04/23 20:00 PM"]
+        """
+        date_str, start_time, end_time = self._parse_time_slot(time_slot)
+        if not (date_str and start_time and end_time):
+            return []
+        
+        year = "2024"
+        
+        start_hour, start_minute = map(int, start_time.split(':'))
+        end_hour, end_minute = map(int, end_time.split(':'))
+        
+        month, day = map(int, date_str.split('/'))
+        
+        start_datetime = datetime(int(year), month, day, start_hour, start_minute)
+        end_datetime = datetime(int(year), month, day, end_hour, end_minute)
+        
+        hourly_slots = []
+        current_time = start_datetime
+        while current_time < end_datetime:
+            am_pm = "AM" if current_time.hour < 12 else "PM"
+            hour_12 = current_time.hour if current_time.hour <= 12 else current_time.hour - 12
+            if hour_12 == 0:
+                hour_12 = 12
+            
+            slot = f"{year}/{current_time.month:02d}/{current_time.day:02d} {hour_12:02d}:{current_time.minute:02d} {am_pm}"
+            hourly_slots.append(slot)
+            
+            current_time += timedelta(hours=1)
+        
+        return hourly_slots
 
 def main():
     parser = argparse.ArgumentParser(description='Schedule interviews based on availability and preferences.')
