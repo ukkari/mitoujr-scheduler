@@ -6,10 +6,49 @@ import numpy as np
 import random
 import argparse
 import os
+import re
+from datetime import datetime, timedelta
+
+def split_into_hourly_slots(time_slot):
+    """
+    Split a time slot into hourly slots.
+    
+    Example: "4/23 夜 (19:00 - 21:00)" -> ["2024/04/23 19:00 PM", "2024/04/23 20:00 PM"]
+    """
+    match = re.match(r'(\d+/\d+)\s+[^\(]+\((\d+:\d+)\s*-\s*(\d+:\d+)\)', time_slot)
+    if not match:
+        return []
+    
+    date_str, start_time, end_time = match.groups()
+    
+    year = "2024"
+    
+    start_hour, start_minute = map(int, start_time.split(':'))
+    end_hour, end_minute = map(int, end_time.split(':'))
+    
+    month, day = map(int, date_str.split('/'))
+    
+    start_datetime = datetime(int(year), month, day, start_hour, start_minute)
+    end_datetime = datetime(int(year), month, day, end_hour, end_minute)
+    
+    hourly_slots = []
+    current_time = start_datetime
+    while current_time < end_datetime:
+        am_pm = "AM" if current_time.hour < 12 else "PM"
+        hour_12 = current_time.hour if current_time.hour <= 12 else current_time.hour - 12
+        if hour_12 == 0:
+            hour_12 = 12
+        
+        slot = f"{year}/{current_time.month:02d}/{current_time.day:02d} {hour_12:02d}:{current_time.minute:02d} {am_pm}"
+        hourly_slots.append(slot)
+        
+        current_time += timedelta(hours=1)
+    
+    return hourly_slots
 
 def generate_time_slots():
     """Generate the list of time slots as specified in the requirements."""
-    time_slots = [
+    original_slots = [
         "4/23 夜 (19:00 - 21:00)",
         "4/24 夜 (19:00 - 21:00)",
         "4/25 夜 (19:00 - 21:00)",
@@ -39,7 +78,12 @@ def generate_time_slots():
         "5/6 午後 (13:00 - 17:00)",
         "5/6 夜 (19:00 - 21:00)"
     ]
-    return time_slots
+    
+    hourly_slots = []
+    for slot in original_slots:
+        hourly_slots.extend(split_into_hourly_slots(slot))
+    
+    return hourly_slots
 
 def generate_availability_data(num_entities, time_slots, availability_rate=0.3):
     """

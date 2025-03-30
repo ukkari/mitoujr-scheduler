@@ -2,10 +2,12 @@
 import pandas as pd
 import argparse
 import os
+import re
+from datetime import datetime, timedelta
 
 def generate_time_slots():
     """Generate the list of time slots as specified in the requirements."""
-    time_slots = [
+    original_slots = [
         "4/23 夜 (19:00 - 21:00)",
         "4/24 夜 (19:00 - 21:00)",
         "4/25 夜 (19:00 - 21:00)",
@@ -35,7 +37,14 @@ def generate_time_slots():
         "5/6 午後 (13:00 - 17:00)",
         "5/6 夜 (19:00 - 21:00)"
     ]
-    return time_slots
+    
+    from generate_test_data import split_into_hourly_slots
+    
+    hourly_slots = []
+    for slot in original_slots:
+        hourly_slots.extend(split_into_hourly_slots(slot))
+    
+    return hourly_slots
 
 def create_mentor_availability(input_file, output_file):
     """
