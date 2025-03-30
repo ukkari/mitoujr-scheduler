@@ -128,15 +128,17 @@ M02,P012,P045,,...
 
 ## Algorithm Details
 
-The scheduling algorithm works in three passes:
+スケジューリングアルゴリズムは以下の4つのパスで動作します：
 
-1. First, it tries to schedule projects that multiple mentors want to interview, finding time slots where all interested mentors are available.
+1. 第1パス: 複数のメンターが面接を希望するプロジェクトを優先的にスケジュールします。全ての希望メンターが利用可能な共通の時間枠を探します。
 
-2. Next, it schedules remaining interviews, prioritizing consecutive time slots for each mentor to minimize their working time.
+2. 第2パス: 残りのインタビューをスケジュールします。このとき、各メンターの作業時間を最小化するために連続する時間枠を優先します。
 
-3. Finally, it handles any remaining unscheduled interviews by finding the earliest available slots.
+3. 第3パス: まだスケジュールされていないインタビューを処理します。最も早い利用可能な時間枠を使用します。
 
-The algorithm prioritizes earlier dates in the schedule and tries to ensure that all mentors can interview their preferred projects.
+4. 第4パス: 上記の手順でもスケジュールできなかったインタビューについて、他のインタビューと同じ時間枠に設定することを許可します。これにより、全てのインタビューがスケジュールされる可能性が高まります。
+
+アルゴリズムは、スケジュールの早い日付を優先し、可能な限り全てのメンターが希望するプロジェクトの面接を行えるようにします。また、メンターの作業時間を最小化するために連続する時間枠を使用します。
 
 ## Limitations
 

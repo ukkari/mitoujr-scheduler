@@ -244,6 +244,30 @@ class InterviewScheduler:
                                 # Create a new interview
                                 self.schedule[(project, slot)] = [mentor]
                             break
+        
+        unscheduled = self._get_unscheduled_interviews()
+        
+        if unscheduled:
+            unscheduled_by_mentor = defaultdict(list)
+            for item in unscheduled:
+                mentor = item['Mentor']
+                project = item['Project ID']
+                unscheduled_by_mentor[mentor].append(project)
+            
+            for mentor, projects in unscheduled_by_mentor.items():
+                for project in projects:
+                    common_slots = self._get_common_availability(project, [mentor])
+                    
+                    if common_slots:
+                        for slot in common_slots:
+                            if (project, slot) in self.schedule:
+                                # Add this mentor to an existing interview
+                                if mentor not in self.schedule[(project, slot)]:
+                                    self.schedule[(project, slot)].append(mentor)
+                            else:
+                                # Create a new interview
+                                self.schedule[(project, slot)] = [mentor]
+                            break
     
     def output_schedule(self):
         """Generate a formatted schedule output."""
@@ -309,10 +333,13 @@ class InterviewScheduler:
                         break
                         
                 if not scheduled:
+                    common_slots = self._get_common_availability(project, [mentor])
+                    reason = "No common availability" if not common_slots else "Mentor already scheduled in all common slots"
+                    
                     unscheduled.append({
                         'Mentor': mentor,
                         'Project ID': project,
-                        'Reason': 'No common availability'
+                        'Reason': reason
                     })
                     
         return unscheduled
