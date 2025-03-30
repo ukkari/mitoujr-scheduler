@@ -16,6 +16,7 @@ For the Mitou Junior program, mentors need to interview project proposers online
 - `generate_test_data.py`: Helper script to generate test data for demonstration
 - `create_mentor_availability.py`: Script to convert Google Form CSV data to mentor availability format
 - `create_proposer_availability.py`: Script to convert transposed Google Form CSV data to proposer availability format
+- `create_mentor_preferences.py`: Script to convert transposed Google Form CSV data to mentor preferences format
 
 ## Requirements
 
@@ -60,7 +61,20 @@ The input CSV file should have:
 - A row with field name "二次選考（オンライン面接）が可能な日時" containing availability data
 - A row with field name "ID" containing proposer IDs
 
-### 3. Generate Test Data (Optional)
+### 3. Create Mentor Preferences File from Google Form
+
+If you have mentor preferences data from a Google Form in a transposed format, you can convert it to the required format:
+
+```bash
+python create_mentor_preferences.py --input-file path/to/google_form_export.csv --output-file test_data/mentor_preferences.csv
+```
+
+The input CSV file should have:
+- First column containing field names
+- A row with field name "ID" containing project IDs
+- Rows after the ID row containing mentor IDs (e.g., M01, M02, etc.) and their preferences marked with any non-empty character
+
+### 4. Generate Test Data (Optional)
 
 If you don't have real data yet, you can generate test data:
 
@@ -73,13 +87,13 @@ This will create:
 - `test_data/mentor_availability.csv`: Availability of mentors
 - `test_data/mentor_preferences.csv`: Mentors' project preferences
 
-### 2. Run the Scheduler
+### 5. Run the Scheduler
 
 ```bash
 python interview_scheduler.py --proposer-file test_data/proposer_availability.csv --mentor-file test_data/mentor_availability.csv --preference-file test_data/mentor_preferences.csv --output-dir schedule_output
 ```
 
-### 3. Review the Results
+### 6. Review the Results
 
 The scheduler will generate several files in the output directory:
 - `complete_schedule.csv`: The complete interview schedule
