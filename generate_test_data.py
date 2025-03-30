@@ -165,7 +165,10 @@ def main():
     project_ids = [f"P{i+1:03d}" for i in range(args.num_proposers)]
     
     # Generate mentor IDs
-    mentor_ids = [f"M{i+1:02d}" for i in range(args.num_mentors)]
+    mentor_ids = ["田中太郎", "佐藤次郎", "山田三郎", "鈴木四郎", "高橋五郎", 
+                 "伊藤六郎", "渡辺七郎", "小林八郎", "加藤九郎", "吉田十郎",
+                 "松本一郎", "井上二郎", "木村三郎", "林四郎", "清水五郎",
+                 "山本六郎", "中村七郎", "石田八郎", "前田九郎", "藤田十郎"][:args.num_mentors]
     
     # Generate availability data
     proposer_availability = generate_availability_data(args.num_proposers, time_slots, 0.3)

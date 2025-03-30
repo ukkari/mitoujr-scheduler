@@ -22,13 +22,12 @@ def create_mentor_preferences(input_file, output_file, id_row_name="ID"):
     
     mentor_preferences = {}
     
-    import re
-    mentor_pattern = re.compile(r'^M\d+$')
+    # mentor_pattern = re.compile(r'^M\d+$')
     
     for i in range(len(df)):
         mentor_id = str(df.iloc[i, 0]).strip()
         
-        if not mentor_pattern.match(mentor_id):
+        if i == 0 or not mentor_id:
             continue
             
         preferences = []
