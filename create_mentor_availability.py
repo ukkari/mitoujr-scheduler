@@ -64,7 +64,7 @@ def create_mentor_availability(input_file, output_file):
         if pd.isna(row['名前']):
             continue
             
-        mentor_id = row.iloc[-1]
+        mentor_id = row['名前']
         
         available_slots_str = row['インタビュー希望時間']
         available_slots = [slot.strip() for slot in available_slots_str.split(',')]

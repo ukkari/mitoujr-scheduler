@@ -31,7 +31,7 @@ def create_example_data():
     
     # Define project IDs and mentor names
     project_ids = ["P001", "P002", "P003", "P004", "P005"]
-    mentor_names = ["MentorA", "MentorB", "MentorC"]
+    mentor_names = ["田中太郎", "佐藤次郎", "山田三郎"]
     
     # Create example availability for proposers
     proposer_data = {
@@ -45,17 +45,17 @@ def create_example_data():
     
     # Create example availability for mentors
     mentor_data = {
-        "MentorA": [True, True, True, True, False, False, True, True, False, False, False, False, False],
-        "MentorB": [False, False, True, True, True, True, False, False, False, True, True, True, True],
-        "MentorC": [True, True, False, False, True, True, True, True, True, True, True, False, False]
+        "田中太郎": [True, True, True, True, False, False, True, True, False, False, False, False, False],
+        "佐藤次郎": [False, False, True, True, True, True, False, False, False, True, True, True, True],
+        "山田三郎": [True, True, False, False, True, True, True, True, True, True, True, False, False]
     }
     mentor_availability = pd.DataFrame(mentor_data, index=time_slots)
     
     # Create example preferences
     preferences = {
-        "MentorA": ["P001", "P003", "P005"],
-        "MentorB": ["P002", "P004"],
-        "MentorC": ["P001", "P002", "P003", "P004"]
+        "田中太郎": ["P001", "P003", "P005"],
+        "佐藤次郎": ["P002", "P004"],
+        "山田三郎": ["P001", "P002", "P003", "P004"]
     }
     
     # Convert preferences to DataFrame format
