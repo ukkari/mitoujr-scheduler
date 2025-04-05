@@ -201,89 +201,63 @@ def create_proposer_availability(input_file, output_file, id_row_name="ID", no_t
                     process_availability_string(available_slots_str, str(proposer_id), availability_df, time_slots, original_slots, slot_mapping)
     
     else:
-        print("Processing file as non-transposed (rows are proposers, columns are attributes)")
+        print("Processing file as non-transposed (columns are proposers, rows are attributes)")
         
-        interview_col = None
+        interview_row_idx = None
         
-        if interview_name in df.columns:
-            interview_col = interview_name
-        else:
-            for col in df.columns:
-                if isinstance(col, str):
-                    if "二次選考" in col and "面接" in col:
-                        interview_col = col
-                        break
-                    elif "可能な日時" in col:
-                        interview_col = col
-                        break
-        
-        if interview_col is None:
-            for col in df.columns:
-                sample_values = df[col].dropna().head(5).tolist()
-                for val in sample_values:
-                    if isinstance(val, str) and ("午前" in val or "午後" in val or "夜" in val):
-                        if any(f"{month}/{day}" in val for month in ["4", "5"] for day in range(1, 32)):
-                            interview_col = col
-                            print(f"Found availability data in column: {col}")
-                            break
-                if interview_col is not None:
+        for idx, row in df.iterrows():
+            row_name = row.iloc[0]  # First column contains row names
+            if isinstance(row_name, str):
+                if "二次選考" in row_name and "面接" in row_name:
+                    interview_row_idx = idx
+                    print(f"Found interview availability data in row {idx}: '{row_name}'")
+                    break
+                elif "可能な日時" in row_name:
+                    interview_row_idx = idx
+                    print(f"Found interview availability data in row {idx}: '{row_name}'")
                     break
         
-        if interview_col is None:
-            for col in df.columns:
-                for idx, val in enumerate(df[col]):
-                    if isinstance(val, str) and ("午前" in val or "午後" in val or "夜" in val):
-                        if any(f"{month}/{day}" in val for month in ["4", "5"] for day in range(1, 32)):
-                            interview_col = col
-                            print(f"Found availability data in column {col} at row {idx}")
+        if interview_row_idx is None:
+            for idx, row in df.iterrows():
+                for col_idx in range(1, len(row)):  # Skip first column (row names)
+                    cell_value = row.iloc[col_idx]
+                    if isinstance(cell_value, str) and ("午前" in cell_value or "午後" in cell_value or "夜" in cell_value):
+                        if any(f"{month}/{day}" in cell_value for month in ["4", "5"] for day in range(1, 32)):
+                            interview_row_idx = idx
+                            print(f"Found availability data in row {idx} with first column: {row.iloc[0]}")
                             break
-                if interview_col is not None:
+                if interview_row_idx is not None:
                     break
         
-        if interview_col is None:
-            raise ValueError("Could not find column with interview availability data in the CSV file")
+        if interview_row_idx is None:
+            raise ValueError("Could not find row with interview availability data in the CSV file")
         
-        print(f"Using column '{interview_col}' for interview availability data")
+        id_row_idx = None
         
-        if id_row_name not in df.columns:
-            for col in df.columns:
-                if col != interview_col:
-                    values = df[col].dropna().tolist()
-                    if len(values) == len(set(values)) and len(values) > 0:
-                        id_row_name = col
-                        print(f"Using column '{col}' as ID column")
-                        break
+        for idx, row in df.iterrows():
+            row_name = row.iloc[0]  # First column contains row names
+            if row_name == id_row_name:
+                id_row_idx = idx
+                print(f"Found ID row at index {idx}: '{row_name}'")
+                break
         
-        if id_row_name not in df.columns:
-            print("Could not find ID column, using row indices as IDs")
-            for idx, row in df.iterrows():
-                proposer_id = f"R{idx+1:03d}"
-                
-                available_slots_str = row[interview_col]
-                
-                if pd.isna(available_slots_str):
-                    continue
-                    
-                availability_df[proposer_id] = False
-                
-                if isinstance(available_slots_str, str):
-                    process_availability_string(available_slots_str, proposer_id, availability_df, time_slots, original_slots, slot_mapping)
-        else:
-            for idx, row in df.iterrows():
-                proposer_id = row[id_row_name]
-                
+        for col_idx in range(1, len(df.columns)):
+            proposer_id = df.columns[col_idx]
+            
+            if id_row_idx is not None:
+                proposer_id = df.iloc[id_row_idx, col_idx]
                 if pd.isna(proposer_id):
                     continue
-                    
-                available_slots_str = row[interview_col]
+            
+            available_slots_str = df.iloc[interview_row_idx, col_idx]
+            
+            if pd.isna(available_slots_str):
+                continue
                 
-                if pd.isna(available_slots_str):
-                    continue
-                    
-                availability_df[str(proposer_id)] = False
-                
-                if isinstance(available_slots_str, str):
-                    process_availability_string(available_slots_str, str(proposer_id), availability_df, time_slots, original_slots, slot_mapping)
+            availability_df[str(proposer_id)] = False
+            
+            if isinstance(available_slots_str, str):
+                process_availability_string(available_slots_str, str(proposer_id), availability_df, time_slots, original_slots, slot_mapping)
     
     availability_df = availability_df.astype(int)
     
