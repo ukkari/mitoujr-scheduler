@@ -46,14 +46,15 @@ def generate_time_slots():
     
     return hourly_slots
 
-def create_proposer_availability(input_file, output_file, id_row_name="ID"):
+def create_proposer_availability(input_file, output_file, id_row_name="ID", no_transpose=False):
     """
-    Convert transposed Google Form CSV format to proposer availability format.
+    Convert Google Form CSV format to proposer availability format.
     
     Args:
-        input_file: Path to the input transposed CSV file from Google Form
+        input_file: Path to the input CSV file from Google Form
         output_file: Path to save the output proposer availability CSV
-        id_row_name: Name of the row containing proposer IDs
+        id_row_name: Name of the row/column containing proposer IDs
+        no_transpose: If True, assume the input file is not transposed (standard format)
     """
     df = pd.read_csv(input_file)
     
@@ -61,35 +62,60 @@ def create_proposer_availability(input_file, output_file, id_row_name="ID"):
     
     availability_df = pd.DataFrame(index=time_slots)
     
-    interview_row_name = "二次選考（オンライン面接）が可能な日時（下記の時間から30分ほど、こちらから指定させて頂きます）"
-    if interview_row_name not in df.iloc[:, 0].values:
-        raise ValueError(f"Could not find row with name '{interview_row_name}' in the CSV file")
+    interview_name = "二次選考（オンライン面接）が可能な日時（下記の時間から30分ほど、こちらから指定させて頂きます）"
     
-    interview_row_index = df.iloc[:, 0].tolist().index(interview_row_name)
-    
-    if id_row_name not in df.iloc[:, 0].values:
-        raise ValueError(f"Could not find row with name '{id_row_name}' in the CSV file")
-    
-    id_row_index = df.iloc[:, 0].tolist().index(id_row_name)
-    
-    for col_idx in range(1, len(df.columns)):
-        proposer_id = df.iloc[id_row_index, col_idx]
+    if no_transpose:
+        if interview_name not in df.columns:
+            raise ValueError(f"Could not find column with name '{interview_name}' in the CSV file")
         
-        if pd.isna(proposer_id):
-            continue
+        for idx, row in df.iterrows():
+            proposer_id = row[id_row_name]
             
-        available_slots_str = df.iloc[interview_row_index, col_idx]
-        
-        if pd.isna(available_slots_str):
-            continue
+            if pd.isna(proposer_id):
+                continue
+                
+            available_slots_str = row[interview_name]
             
-        availability_df[proposer_id] = False
+            if pd.isna(available_slots_str):
+                continue
+                
+            availability_df[proposer_id] = False
+            
+            available_slots = [slot.strip() for slot in available_slots_str.split(',')]
+            
+            for slot in available_slots:
+                if slot in time_slots:
+                    availability_df.loc[slot, proposer_id] = True
+    
+    else:
+        if interview_name not in df.iloc[:, 0].values:
+            raise ValueError(f"Could not find row with name '{interview_name}' in the CSV file")
         
-        available_slots = [slot.strip() for slot in available_slots_str.split(',')]
+        interview_row_index = df.iloc[:, 0].tolist().index(interview_name)
         
-        for slot in available_slots:
-            if slot in time_slots:
-                availability_df.loc[slot, proposer_id] = True
+        if id_row_name not in df.iloc[:, 0].values:
+            raise ValueError(f"Could not find row with name '{id_row_name}' in the CSV file")
+        
+        id_row_index = df.iloc[:, 0].tolist().index(id_row_name)
+        
+        for col_idx in range(1, len(df.columns)):
+            proposer_id = df.iloc[id_row_index, col_idx]
+            
+            if pd.isna(proposer_id):
+                continue
+                
+            available_slots_str = df.iloc[interview_row_index, col_idx]
+            
+            if pd.isna(available_slots_str):
+                continue
+                
+            availability_df[proposer_id] = False
+            
+            available_slots = [slot.strip() for slot in available_slots_str.split(',')]
+            
+            for slot in available_slots:
+                if slot in time_slots:
+                    availability_df.loc[slot, proposer_id] = True
     
     availability_df = availability_df.astype(int)
     
@@ -98,10 +124,11 @@ def create_proposer_availability(input_file, output_file, id_row_name="ID"):
     return availability_df
 
 def main():
-    parser = argparse.ArgumentParser(description='Create proposer availability file from transposed Google Form CSV.')
-    parser.add_argument('--input-file', required=True, help='Input transposed CSV file from Google Form')
+    parser = argparse.ArgumentParser(description='Create proposer availability file from Google Form CSV.')
+    parser.add_argument('--input-file', required=True, help='Input CSV file from Google Form')
     parser.add_argument('--output-file', default='proposer_availability.csv', help='Output proposer availability CSV file')
-    parser.add_argument('--id-row', default='ID', help='Name of the row containing proposer IDs')
+    parser.add_argument('--id-row', default='ID', help='Name of the row/column containing proposer IDs')
+    parser.add_argument('--no-transpose', action='store_true', help='Set this flag if the input CSV is not transposed (standard format)')
     
     args = parser.parse_args()
     
@@ -109,7 +136,7 @@ def main():
     if output_dir:
         os.makedirs(output_dir, exist_ok=True)
     
-    availability_df = create_proposer_availability(args.input_file, args.output_file, args.id_row)
+    availability_df = create_proposer_availability(args.input_file, args.output_file, args.id_row, args.no_transpose)
     
     print(f"Proposer availability file created: {args.output_file}")
     print(f"Number of proposers: {len(availability_df.columns)}")
