@@ -67,12 +67,18 @@ def create_proposer_availability(input_file, output_file, id_row_name="ID", no_t
     if id_row_name in df.columns and df.columns[0] == id_row_name:
         interview_row = None
         for idx, row in df.iterrows():
-            if interview_name in str(row.iloc[0]):
+            if isinstance(row.iloc[0], str) and interview_name in row.iloc[0]:
                 interview_row = row
                 break
         
         if interview_row is None:
-            raise ValueError(f"Could not find row with '{interview_name}' in the CSV file")
+            for idx, row in df.iterrows():
+                if isinstance(row.iloc[0], str) and "二次選考" in row.iloc[0] and "面接" in row.iloc[0]:
+                    interview_row = row
+                    break
+        
+        if interview_row is None:
+            raise ValueError(f"Could not find row with interview availability data in the CSV file")
         
         for col_name in df.columns[1:]:  # Skip the first column (ID)
             proposer_id = col_name
@@ -87,11 +93,16 @@ def create_proposer_availability(input_file, output_file, id_row_name="ID", no_t
                 
             availability_df[proposer_id] = False
             
-            available_slots = [slot.strip() for slot in str(available_slots_str).split(',')]
-            
-            for slot in available_slots:
-                if slot in time_slots:
-                    availability_df.loc[slot, proposer_id] = True
+            if isinstance(available_slots_str, str):
+                for slot in time_slots:
+                    if slot in available_slots_str:
+                        availability_df.loc[slot, proposer_id] = True
+                
+                if availability_df[proposer_id].sum() == 0:
+                    available_slots = [slot.strip() for slot in available_slots_str.split(',')]
+                    for slot in available_slots:
+                        if slot in time_slots:
+                            availability_df.loc[slot, proposer_id] = True
     
     elif no_transpose:
         if interview_name not in df.columns:
