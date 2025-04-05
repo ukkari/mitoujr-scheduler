@@ -66,6 +66,7 @@ def create_proposer_availability(input_file, output_file, id_row_name="ID", no_t
     
     if id_row_name in df.columns and df.columns[0] == id_row_name:
         interview_row = None
+        
         for idx, row in df.iterrows():
             if isinstance(row.iloc[0], str) and interview_name in row.iloc[0]:
                 interview_row = row
@@ -75,6 +76,24 @@ def create_proposer_availability(input_file, output_file, id_row_name="ID", no_t
             for idx, row in df.iterrows():
                 if isinstance(row.iloc[0], str) and "二次選考" in row.iloc[0] and "面接" in row.iloc[0]:
                     interview_row = row
+                    break
+        
+        if interview_row is None:
+            for idx, row in df.iterrows():
+                if isinstance(row.iloc[0], str) and "可能な日時" in row.iloc[0]:
+                    interview_row = row
+                    break
+        
+        if interview_row is None:
+            for idx, row in df.iterrows():
+                for col_idx in range(1, len(row)):
+                    cell_value = row.iloc[col_idx]
+                    if isinstance(cell_value, str) and ("午前" in cell_value or "午後" in cell_value or "夜" in cell_value):
+                        if any(f"{month}/{day}" in cell_value for month in ["4", "5"] for day in range(1, 32)):
+                            interview_row = row
+                            print(f"Found availability data in row {idx} with first column: {row.iloc[0]}")
+                            break
+                if interview_row is not None:
                     break
         
         if interview_row is None:
