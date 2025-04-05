@@ -124,8 +124,34 @@ def create_proposer_availability(input_file, output_file, id_row_name="ID", no_t
                             availability_df.loc[slot, proposer_id] = True
     
     elif no_transpose:
-        if interview_name not in df.columns:
-            raise ValueError(f"Could not find column with name '{interview_name}' in the CSV file")
+        interview_col = None
+        
+        if interview_name in df.columns:
+            interview_col = interview_name
+        else:
+            for col in df.columns:
+                if isinstance(col, str) and "二次選考" in col and "面接" in col:
+                    interview_col = col
+                    break
+            
+            if interview_col is None:
+                for col in df.columns:
+                    if isinstance(col, str) and "可能な日時" in col:
+                        interview_col = col
+                        break
+        
+        if interview_col is None:
+            for col in df.columns:
+                sample_value = df[col].iloc[0] if len(df) > 0 else None
+                if isinstance(sample_value, str) and ("午前" in sample_value or "午後" in sample_value or "夜" in sample_value):
+                    if any(f"{month}/{day}" in sample_value for month in ["4", "5"] for day in range(1, 32)):
+                        interview_col = col
+                        break
+        
+        if interview_col is None:
+            raise ValueError(f"Could not find column with interview availability data in the CSV file")
+        
+        print(f"Found interview availability data in column: {interview_col}")
         
         for idx, row in df.iterrows():
             proposer_id = row[id_row_name]
@@ -133,18 +159,23 @@ def create_proposer_availability(input_file, output_file, id_row_name="ID", no_t
             if pd.isna(proposer_id):
                 continue
                 
-            available_slots_str = row[interview_name]
+            available_slots_str = row[interview_col]
             
             if pd.isna(available_slots_str):
                 continue
                 
             availability_df[proposer_id] = False
             
-            available_slots = [slot.strip() for slot in str(available_slots_str).split(',')]
-            
-            for slot in available_slots:
-                if slot in time_slots:
-                    availability_df.loc[slot, proposer_id] = True
+            if isinstance(available_slots_str, str):
+                for slot in time_slots:
+                    if slot in available_slots_str:
+                        availability_df.loc[slot, proposer_id] = True
+                
+                if availability_df[proposer_id].sum() == 0:
+                    available_slots = [slot.strip() for slot in available_slots_str.split(',')]
+                    for slot in available_slots:
+                        if slot in time_slots:
+                            availability_df.loc[slot, proposer_id] = True
     
     else:
         if interview_name not in df.iloc[:, 0].values:
