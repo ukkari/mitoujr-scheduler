@@ -3,7 +3,9 @@ import pandas as pd
 import argparse
 import os
 import re
+import sys
 from datetime import datetime, timedelta
+from process_availability import process_availability_string
 
 def generate_time_slots():
     """Generate the list of time slots as specified in the requirements."""
@@ -59,6 +61,53 @@ def create_proposer_availability(input_file, output_file, id_row_name="ID", no_t
     df = pd.read_csv(input_file)
     
     time_slots = generate_time_slots()
+    
+    original_slots = [
+        "4/23 夜 (19:00 - 21:00)",
+        "4/24 夜 (19:00 - 21:00)",
+        "4/25 夜 (19:00 - 21:00)",
+        "4/26 午前 (9:00 - 12:00)",
+        "4/26 午後 (13:00 - 17:00)",
+        "4/26 夜 (19:00 - 21:00)",
+        "4/27 午前 (9:00 - 12:00)",
+        "4/27 午後 (13:00 - 17:00)",
+        "4/27 夜 (19:00 - 21:00)",
+        "4/28 夜 (19:00 - 21:00)",
+        "4/29 午前 (9:00 - 12:00)",
+        "4/29 午後 (13:00 - 17:00)",
+        "4/29 夜 (19:00 - 21:00)",
+        "4/30 夜 (19:00 - 21:00)",
+        "5/1 夜 (19:00 - 21:00)",
+        "5/2 夜 (19:00 - 21:00)",
+        "5/3 午前 (9:00 - 12:00)",
+        "5/3 午後 (13:00 - 17:00)",
+        "5/3 夜 (19:00 - 21:00)",
+        "5/4 午前 (9:00 - 12:00)",
+        "5/4 午後 (13:00 - 17:00)",
+        "5/4 夜 (19:00 - 21:00)",
+        "5/5 午前 (9:00 - 12:00)",
+        "5/5 午後 (13:00 - 17:00)",
+        "5/5 夜 (19:00 - 21:00)",
+        "5/6 午前 (9:00 - 12:00)",
+        "5/6 午後 (13:00 - 17:00)",
+        "5/6 夜 (19:00 - 21:00)"
+    ]
+    
+    slot_mapping = {}
+    hourly_idx = 0
+    for orig_slot in original_slots:
+        if "午前" in orig_slot:
+            for i in range(3):
+                slot_mapping[orig_slot] = slot_mapping.get(orig_slot, []) + [time_slots[hourly_idx + i]]
+            hourly_idx += 3
+        elif "午後" in orig_slot:
+            for i in range(4):
+                slot_mapping[orig_slot] = slot_mapping.get(orig_slot, []) + [time_slots[hourly_idx + i]]
+            hourly_idx += 4
+        elif "夜" in orig_slot:
+            for i in range(2):
+                slot_mapping[orig_slot] = slot_mapping.get(orig_slot, []) + [time_slots[hourly_idx + i]]
+            hourly_idx += 2
     
     availability_df = pd.DataFrame(index=time_slots)
     
@@ -133,15 +182,7 @@ def create_proposer_availability(input_file, output_file, id_row_name="ID", no_t
                 availability_df[proposer_id] = False
                 
                 if isinstance(available_slots_str, str):
-                    for slot in time_slots:
-                        if slot in available_slots_str:
-                            availability_df.loc[slot, proposer_id] = True
-                    
-                    if availability_df[proposer_id].sum() == 0:
-                        available_slots = [slot.strip() for slot in available_slots_str.split(',')]
-                        for slot in available_slots:
-                            if slot in time_slots:
-                                availability_df.loc[slot, proposer_id] = True
+                    process_availability_string(available_slots_str, proposer_id, availability_df, time_slots, original_slots, slot_mapping)
         else:
             for col_idx in range(1, len(df.columns)):
                 proposer_id = df.iloc[id_row_index, col_idx]
@@ -157,15 +198,7 @@ def create_proposer_availability(input_file, output_file, id_row_name="ID", no_t
                 availability_df[str(proposer_id)] = False
                 
                 if isinstance(available_slots_str, str):
-                    for slot in time_slots:
-                        if slot in available_slots_str:
-                            availability_df.loc[slot, str(proposer_id)] = True
-                    
-                    if availability_df[str(proposer_id)].sum() == 0:
-                        available_slots = [slot.strip() for slot in available_slots_str.split(',')]
-                        for slot in available_slots:
-                            if slot in time_slots:
-                                availability_df.loc[slot, str(proposer_id)] = True
+                    process_availability_string(available_slots_str, str(proposer_id), availability_df, time_slots, original_slots, slot_mapping)
     
     else:
         print("Processing file as non-transposed (rows are proposers, columns are attributes)")
@@ -234,15 +267,7 @@ def create_proposer_availability(input_file, output_file, id_row_name="ID", no_t
                 availability_df[proposer_id] = False
                 
                 if isinstance(available_slots_str, str):
-                    for slot in time_slots:
-                        if slot in available_slots_str:
-                            availability_df.loc[slot, proposer_id] = True
-                    
-                    if availability_df[proposer_id].sum() == 0:
-                        available_slots = [slot.strip() for slot in available_slots_str.split(',')]
-                        for slot in available_slots:
-                            if slot in time_slots:
-                                availability_df.loc[slot, proposer_id] = True
+                    process_availability_string(available_slots_str, proposer_id, availability_df, time_slots, original_slots, slot_mapping)
         else:
             for idx, row in df.iterrows():
                 proposer_id = row[id_row_name]
@@ -258,15 +283,7 @@ def create_proposer_availability(input_file, output_file, id_row_name="ID", no_t
                 availability_df[str(proposer_id)] = False
                 
                 if isinstance(available_slots_str, str):
-                    for slot in time_slots:
-                        if slot in available_slots_str:
-                            availability_df.loc[slot, str(proposer_id)] = True
-                    
-                    if availability_df[str(proposer_id)].sum() == 0:
-                        available_slots = [slot.strip() for slot in available_slots_str.split(',')]
-                        for slot in available_slots:
-                            if slot in time_slots:
-                                availability_df.loc[slot, str(proposer_id)] = True
+                    process_availability_string(available_slots_str, str(proposer_id), availability_df, time_slots, original_slots, slot_mapping)
     
     availability_df = availability_df.astype(int)
     
